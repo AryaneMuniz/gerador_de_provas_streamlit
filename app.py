@@ -1,6 +1,9 @@
 import streamlit as st
 from docx import Document
-from docx.shared import Inches
+from docx.shared import Inches, Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.shared import OxmlElement
+from docx.oxml.ns import qn
 from datetime import date
 import os
 
@@ -12,6 +15,13 @@ def criar_pasta_temp():
 # Configuração do título da página
 st.set_page_config(page_title="Gerador de Provas", layout="centered")
 st.title("📝 Gerador de Provas Escolares")
+
+# Upload do logo (opcional)
+logo_escola = st.file_uploader(
+    "🔳 Carregar logo da escola (opcional)", 
+    type=["png", "jpg", "jpeg"],
+    help="Faça upload do logo para aparecer no cabeçalho da prova."
+)
 
 # Campos principais
 nome_professor = st.text_input("Nome do Professor")
@@ -56,24 +66,18 @@ else:
 if st.button("➕ Adicionar questão"):
     if nova_questao.strip() != "":
         if tipo_questao == "Múltipla Escolha" and (opcao_a and opcao_b and opcao_c and opcao_d):
-            # Formatação para questões de múltipla escolha
             questao = f"{nova_questao}\nA) {opcao_a}\nB) {opcao_b}\nC) {opcao_c}\nD) {opcao_d}\nResposta correta: {resposta_correta}"
         else:
-            # Questão dissertativa
             questao = nova_questao
         
-        # Se uma imagem foi carregada, salvar e adicionar ao arquivo temporário
         if imagem_questao:
-            # Chamar a função para garantir que a pasta 'temp' exista
             criar_pasta_temp()
-            
-            # Defina um caminho temporário para a imagem
             imagem_path = os.path.join("temp", imagem_questao.name)
             with open(imagem_path, "wb") as f:
                 f.write(imagem_questao.getbuffer())
             questao += f"\n[Imagem adicionada: {imagem_questao.name}]"
         
-        st.session_state.questoes.append(questao.strip())  # Corrigido: Fechamento correto do parêntese
+        st.session_state.questoes.append(questao.strip())
         st.success("Questão adicionada com sucesso!")
     else:
         st.warning("Digite algo antes de adicionar.")
@@ -102,40 +106,83 @@ if st.button("📥 Gerar prova em Word"):
     else:
         doc = Document()
 
-        # TÍTULO PERSONALIZADO (com disciplina e bimestre)
-        doc.add_heading(f"PROVA DE {disciplina.upper()} – {bimestre.upper()}", 0)
+        # ===== CONFIGURAÇÃO DO DOCUMENTO =====
+        # Define a fonte padrão para Arial 12
+        style = doc.styles['Normal']
+        font = style.font
+        font.name = 'Arial'
+        font.size = Pt(12)
 
-        # Informações adicionais
-        doc.add_paragraph(f"Professor: {nome_professor}")
-        doc.add_paragraph(f"Disciplina: {disciplina}")
-        doc.add_paragraph(f"Série/Turma: {serie}")
-        doc.add_paragraph(f"Bimestre: {bimestre}")
-        doc.add_paragraph(f"Data: {data_prova.strftime('%d/%m/%Y')}")
-        doc.add_paragraph(" ")
+        # Configura margens (2,5 cm em todos os lados)
+        sections = doc.sections
+        for section in sections:
+            section.top_margin = Inches(1.0)  # 2,54 cm = 1 polegada
+            section.bottom_margin = Inches(1.0)
+            section.left_margin = Inches(1.0)
+            section.right_margin = Inches(1.0)
 
-        # Adicionar questões no documento
+        # ===== CABEÇALHO COM LOGO =====
+        # Se um logo foi carregado, adiciona ao documento
+        if logo_escola:
+            criar_pasta_temp()
+            logo_path = os.path.join("temp", logo_escola.name)
+            with open(logo_path, "wb") as f:
+                f.write(logo_escola.getbuffer())
+            
+            # Adiciona o logo (ajustado para largura máxima de 3 polegadas)
+            doc.add_picture(logo_path, width=Inches(1.5))  # Ajuste o tamanho conforme necessário
+            last_paragraph = doc.paragraphs[-1]
+            last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            doc.add_paragraph()  # Espaço após o logo
+
+        # Título centralizado em negrito e tamanho 14
+        titulo = doc.add_heading(f"PROVA DE {disciplina.upper()} – {bimestre.upper()}", level=0)
+        titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        titulo_format = titulo.runs[0]
+        titulo_format.bold = True
+        titulo_format.font.size = Pt(14)
+
+        # Adiciona informações da prova
+        info_prova = [
+            f"Professor: {nome_professor}",
+            f"Disciplina: {disciplina}",
+            f"Série/Turma: {serie}",
+            f"Bimestre: {bimestre}",
+            f"Data: {data_prova.strftime('%d/%m/%Y')}"
+        ]
+
+        for info in info_prova:
+            p = doc.add_paragraph(info)
+            p.paragraph_format.space_after = Pt(6)  # Espaçamento entre linhas
+
+        doc.add_paragraph(" ")  # Espaço extra antes das questões
+
+        # ===== QUESTÕES =====
         for i, questao in enumerate(st.session_state.questoes, 1):
-            # Verifica se a questão contém a marca de imagem
             if "[Imagem adicionada:" in questao:
-                # Extrai o nome da imagem
-                imagem_nome = questao.split(": ")[-1].replace("]", "")
+                # Separa o texto da imagem
+                texto_questao, imagem_nome = questao.split("[Imagem adicionada:")
+                texto_questao = texto_questao.strip()
+                imagem_nome = imagem_nome.replace("]", "").strip()
                 imagem_path = os.path.join("temp", imagem_nome)
                 
                 # Adiciona o texto da questão
-                doc.add_paragraph(f"{i}. {questao.split('[Imagem adicionada:')[0].strip()}")
+                p = doc.add_paragraph(f"{i}. {texto_questao}")
+                p.paragraph_format.space_after = Pt(12)  # Espaçamento maior após questão
                 
-                # Tenta adicionar a imagem ao Word
+                # Adiciona a imagem centralizada
                 try:
-                    doc.add_picture(imagem_path, width=Inches(4.0))  # Ajusta a imagem no documento
+                    doc.add_picture(imagem_path, width=Inches(4.0))
+                    last_paragraph = doc.paragraphs[-1]
+                    last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 except Exception as e:
                     st.error(f"Erro ao adicionar a imagem: {e}")
             else:
-                doc.add_paragraph(f"{i}. {questao}")
+                p = doc.add_paragraph(f"{i}. {questao}")
+                p.paragraph_format.space_after = Pt(12)  # Espaçamento entre questões
 
-        # Gerar nome do arquivo com base na disciplina, série e bimestre
+        # Salva o arquivo
         nome_arquivo = f"prova_{disciplina.upper()}_{serie} ({bimestre}).docx"
-        
-        # Salvar o arquivo
         doc.save(nome_arquivo)
 
         # Botão para download
