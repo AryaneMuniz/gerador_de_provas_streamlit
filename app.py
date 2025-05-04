@@ -97,10 +97,10 @@ for i, q in enumerate(st.session_state.questoes):
     col_editar, col_excluir = st.columns([1, 1])
     if col_editar.button("✏️ Editar", key=f"editar_{i}"):
         st.session_state.editando_index = i
-        st.experimental_rerun()
+        st.experimental_rerun()  # Aqui estamos forçando a reinicialização, o que pode ser evitado de outra maneira
     if col_excluir.button("🗑️ Excluir", key=f"excluir_{i}"):
         st.session_state.questoes.pop(i)
-        st.experimental_rerun()
+        st.experimental_rerun()  # Aqui também podemos evitar o uso de `rerun` se gerenciarmos bem o estado
 
 # --- Exportação da Prova ---
 st.subheader("📤 Exportar Prova")
@@ -162,4 +162,3 @@ if st.button("💾 Gerar Documento Word"):
             )
         except Exception as e:
             st.error(f"Erro ao gerar documento: {str(e)}")
-
