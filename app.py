@@ -80,7 +80,7 @@ if st.button("📁 Gerar prova em Word"):
         st.warning("⚠️ Adicione ao menos uma questão antes de gerar a prova.")
     else:
         doc = Document()
-        doc.add_heading(f'PROVA - {disciplina}', 0)
+       doc.add_heading(f"PROVA DE {disciplina.upper()} – {bimestre.upper()}", 0)
         doc.add_paragraph(f"Professor: {nome_professor}")
         doc.add_paragraph(f"Disciplina: {disciplina}")
         doc.add_paragraph(f"Série/Turma: {serie}")
