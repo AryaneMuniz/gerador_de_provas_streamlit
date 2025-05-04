@@ -3,23 +3,17 @@ from docx import Document
 from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from datetime import date
-import os
+from PIL import Image
+import io
 
 # --- CONFIGURAÇÃO INICIAL ---
 st.set_page_config(page_title="Gerador de Provas", layout="centered")
 st.title("📝 Gerador de Provas Escolares")
 
 # --- FUNÇÕES ---
-def criar_pasta_temp():
-    """Cria pasta para arquivos temporários"""
-    if not os.path.exists("temp"):
-        os.makedirs("temp")
-
 def limpar_pasta_temp():
-    """Remove arquivos temporários"""
-    if os.path.exists("temp"):
-        for file in os.listdir("temp"):
-            os.remove(os.path.join("temp", file))
+    """Função mantida apenas por segurança, mas não é mais usada"""
+    pass
 
 # --- UPLOAD DO LOGO (CABEÇALHO) ---
 st.sidebar.header("Configurações do Cabeçalho")
@@ -70,20 +64,12 @@ if st.button("➕ Adicionar Questão"):
         questao = {
             "texto": texto_questao,
             "tipo": tipo_questao,
-            "imagem": None,
+            "imagem": imagem_questao.getvalue() if imagem_questao else None,
             "opcoes": None if tipo_questao == "Dissertativa" else {
                 "A": opcao_a, "B": opcao_b, "C": opcao_c, "D": opcao_d
             },
             "resposta": resposta if tipo_questao == "Múltipla Escolha" else None
         }
-        
-        if imagem_questao:
-            criar_pasta_temp()
-            img_path = os.path.join("temp", imagem_questao.name)
-            with open(img_path, "wb") as f:
-                f.write(imagem_questao.getbuffer())
-            questao["imagem"] = img_path
-        
         st.session_state.questoes.append(questao)
         st.success("Questão adicionada!")
     else:
@@ -97,7 +83,10 @@ else:
     for i, q in enumerate(st.session_state.questoes, 1):
         st.markdown(f"**Questão {i}:** {q['texto']}")
         if q["imagem"]:
-            st.image(q["imagem"], width=400)
+            try:
+                st.image(q["imagem"], width=400)
+            except:
+                st.warning("Erro ao exibir imagem.")
         if q["tipo"] == "Múltipla Escolha":
             st.write(f"A) {q['opcoes']['A']} | B) {q['opcoes']['B']}")
             st.write(f"C) {q['opcoes']['C']} | D) {q['opcoes']['D']}")
@@ -112,61 +101,63 @@ if st.button("💾 Gerar Documento Word"):
     else:
         try:
             doc = Document()
-            
+
             # CONFIGURAÇÃO DO DOCUMENTO
             style = doc.styles['Normal']
             style.font.name = 'Arial'
             style.font.size = Pt(12)
-            
+
             # CABEÇALHO COM LOGO
             if logo_escola:
-                criar_pasta_temp()
-                logo_path = os.path.join("temp", "logo_cabecalho." + logo_escola.name.split(".")[-1])
-                with open(logo_path, "wb") as f:
-                    f.write(logo_escola.getbuffer())
-                
-                # Adiciona logo (largura de 3cm)
-                doc.add_picture(logo_path, width=Inches(1.18))
-                last_paragraph = doc.paragraphs[-1]
-                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                doc.add_paragraph()
-            
+                try:
+                    logo_bytes = logo_escola.getvalue()
+                    image_stream = io.BytesIO(logo_bytes)
+                    image_stream.seek(0)
+                    doc.add_picture(image_stream, width=Inches(1.18))
+                    last_paragraph = doc.paragraphs[-1]
+                    last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    doc.add_paragraph()
+                except:
+                    st.warning("Erro ao carregar o logo.")
+
             # TÍTULO DA PROVA
             titulo = doc.add_paragraph()
             titulo.add_run(f"PROVA DE {disciplina.upper()}").bold = True
             titulo.add_run(f" - {bimestre.upper()}\n").bold = True
             titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            
+
             # INFORMAÇÕES
             doc.add_paragraph(f"Professor: {nome_professor}")
             doc.add_paragraph(f"Turma: {serie}")
             doc.add_paragraph(f"Data: {data_prova.strftime('%d/%m/%Y')}")
             doc.add_paragraph("\n")
-            
+
             # QUESTÕES
             for i, q in enumerate(st.session_state.questoes, 1):
                 doc.add_paragraph(f"{i}. {q['texto']}")
-                
+
                 if q["imagem"]:
                     try:
-                        doc.add_picture(q["imagem"], width=Inches(4.5))
+                        image_stream = io.BytesIO(q["imagem"])
+                        image_stream.seek(0)
+                        doc.add_picture(image_stream, width=Inches(4.5))
                         doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
                     except:
                         doc.add_paragraph("[Imagem não carregada]")
-                
+
                 if q["tipo"] == "Múltipla Escolha":
                     doc.add_paragraph(f"A) {q['opcoes']['A']}")
                     doc.add_paragraph(f"B) {q['opcoes']['B']}")
                     doc.add_paragraph(f"C) {q['opcoes']['C']}")
                     doc.add_paragraph(f"D) {q['opcoes']['D']}")
                     doc.add_paragraph(f"Resposta correta: {q['resposta']}")
-                
+
                 doc.add_paragraph()
-            
-            # SALVAR
+
+            # SALVAR E DOWNLOAD
             nome_arquivo = f"Prova_{disciplina}_{serie}_{bimestre}.docx".replace(" ", "_")
             doc.save(nome_arquivo)
-            
+
             with open(nome_arquivo, "rb") as f:
                 st.download_button(
                     "⬇️ Baixar Prova",
@@ -174,8 +165,7 @@ if st.button("💾 Gerar Documento Word"):
                     file_name=nome_arquivo,
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
-            
-            limpar_pasta_temp()
+
             st.success("Documento gerado com sucesso!")
         except Exception as e:
             st.error(f"Erro: {str(e)}")
