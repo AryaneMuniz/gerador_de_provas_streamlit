@@ -14,7 +14,7 @@ st.sidebar.header("Configurações do Cabeçalho")
 logo_escola = st.sidebar.file_uploader("📌 Upload do Logo (PNG/JPG)", type=["png", "jpg", "jpeg"])
 
 with st.form("dados_prova"):
-    nome_professor = st.text_input("Nome do Professor")
+    nome_professor = st.text_input("Nome do(a) Professor(a)")
     disciplina = st.text_input("Disciplina")
     serie = st.selectbox("Série/Turma", [
         "1º ano - Ensino Fundamental", "2º ano - Ensino Fundamental", 
@@ -35,7 +35,7 @@ if "questoes" not in st.session_state:
 # --- ADIÇÃO DE QUESTÃO ---
 st.subheader("✍️ Adicionar Questão")
 tipo_questao = st.radio("Tipo:", ["Dissertativa", "Múltipla Escolha"], horizontal=True)
-texto_questao = st.text_area("Texto da Questão", height=250)
+texto_questao = st.text_area("Texto da Questão", height=700)
 imagem_questao = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"], key="imagem_questao")
 
 if tipo_questao == "Múltipla Escolha":
@@ -99,7 +99,7 @@ if st.button("💾 Gerar Documento Word"):
             titulo = doc.add_paragraph()
             titulo.add_run(f"PROVA DE {disciplina.upper()} - {bimestre.upper()}").bold = True
             titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            doc.add_paragraph(f"Professor: {nome_professor}")
+            doc.add_paragraph(f"Professor(a): {nome_professor(a)}")
             doc.add_paragraph(f"Turma: {serie}")
             doc.add_paragraph(f"Data: {data_prova.strftime('%d/%m/%Y')}")
             doc.add_paragraph("\n")
