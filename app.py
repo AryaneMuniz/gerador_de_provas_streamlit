@@ -61,7 +61,7 @@ modo = "✏️ Editar Questão" if st.session_state.editando_index is not None e
 st.subheader(modo)
 
 # Limpar campos após clicar em "Adicionar Questão"
-if st.button("➕ Adicionar Questão"):
+if st.button("➕ Adicionar Questão", key="adicionar_questao"):
     st.session_state.texto_questao = ""
     st.session_state.imagem_questao = None
     st.session_state.opcao_a = ""
@@ -90,7 +90,7 @@ else:
     st.session_state.opcao_d = ""
 
 # Ao clicar no botão de adicionar/editar
-if st.button(modo):
+if st.button(modo, key="adicionar_editar_questao"):
     if texto_questao.strip():
         nova_questao = {
             "texto": texto_questao,
@@ -146,7 +146,7 @@ for i, q in enumerate(st.session_state.questoes):
 
 # --- Exportação da Prova --- 
 st.subheader("📤 Exportar Prova")
-if st.button("💾 Gerar Documento Word"):
+if st.button("💾 Gerar Documento Word", key="gerar_doc"):
     if not st.session_state.questoes:
         st.error("Adicione questões primeiro!")
     else:
