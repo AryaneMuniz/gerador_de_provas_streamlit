@@ -115,16 +115,22 @@ if st.button("📥 Gerar prova em Word"):
 
         # Adicionar questões no documento
         for i, questao in enumerate(st.session_state.questoes, 1):
-            doc.add_paragraph(f"{i}. {questao}")
-            
-            # Verificar se há uma imagem associada à questão
-            if f"[Imagem adicionada:" in questao:
+            # Verifica se a questão contém a marca de imagem
+            if "[Imagem adicionada:" in questao:
+                # Extrai o nome da imagem
                 imagem_nome = questao.split(": ")[-1].replace("]", "")
                 imagem_path = os.path.join("temp", imagem_nome)
+                
+                # Adiciona o texto da questão
+                doc.add_paragraph(f"{i}. {questao.split('[Imagem adicionada:')[0].strip()}")
+                
+                # Tenta adicionar a imagem ao Word
                 try:
                     doc.add_picture(imagem_path, width=Inches(4.0))  # Ajusta a imagem no documento
                 except Exception as e:
                     st.error(f"Erro ao adicionar a imagem: {e}")
+            else:
+                doc.add_paragraph(f"{i}. {questao}")
 
         # Salvar o arquivo
         doc_path = "prova_gerada.docx"
