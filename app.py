@@ -4,6 +4,11 @@ from docx.shared import Inches
 from datetime import date
 import os
 
+# Função para garantir que a pasta 'temp' exista
+def criar_pasta_temp():
+    if not os.path.exists("temp"):
+        os.makedirs("temp")
+
 # Configuração do título da página
 st.set_page_config(page_title="Gerador de Provas", layout="centered")
 st.title("📝 Gerador de Provas Escolares")
@@ -59,6 +64,9 @@ if st.button("➕ Adicionar questão"):
         
         # Se uma imagem foi carregada, salvar e adicionar ao arquivo temporário
         if imagem_questao:
+            # Chamar a função para garantir que a pasta 'temp' exista
+            criar_pasta_temp()
+            
             # Defina um caminho temporário para a imagem
             imagem_path = os.path.join("temp", imagem_questao.name)
             with open(imagem_path, "wb") as f:
@@ -130,5 +138,3 @@ if st.button("📥 Gerar prova em Word"):
                 file_name=doc_path,
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-
-
