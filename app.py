@@ -37,22 +37,25 @@ with st.form("form_dados"):
 # --- Adicionar Questão ---
 st.subheader("➕ Adicionar Questão")
 
-with st.form("form_questao"):
-    tipo = st.radio("Tipo de Questão", ["Dissertativa", "Múltipla Escolha"], horizontal=True)
-    texto = st.text_area("Texto da Questão", height=150)
+with st.form("form_questao", clear_on_submit=True):
+    tipo = st.radio("Tipo de Questão", ["Dissertativa", "Múltipla Escolha"], horizontal=True, key="tipo_questao")
+    texto = st.text_area("Texto da Questão", height=150, key="texto_questao")
     imagem = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"], key="imagem_questao")
 
-    # Mostrar opções apenas para múltipla escolha
+    # Container para as opções (só aparece se for múltipla escolha)
+    opcoes_container = st.container()
+    
     if tipo == "Múltipla Escolha":
-        st.write("Opções de resposta:")
-        col1, col2 = st.columns(2)
-        with col1:
-            opcao_a = st.text_input("Opção A", key="opt_a")
-            opcao_c = st.text_input("Opção C", key="opt_c")
-        with col2:
-            opcao_b = st.text_input("Opção B", key="opt_b")
-            opcao_d = st.text_input("Opção D", key="opt_d")
-        opcoes = {'A': opcao_a, 'B': opcao_b, 'C': opcao_c, 'D': opcao_d}
+        with opcoes_container:
+            st.write("Opções de resposta:")
+            col1, col2 = st.columns(2)
+            with col1:
+                opcao_a = st.text_input("Opção A", key="opt_a")
+                opcao_c = st.text_input("Opção C", key="opt_c")
+            with col2:
+                opcao_b = st.text_input("Opção B", key="opt_b")
+                opcao_d = st.text_input("Opção D", key="opt_d")
+            opcoes = {'A': opcao_a, 'B': opcao_b, 'C': opcao_c, 'D': opcao_d}
     else:
         opcoes = None
 
@@ -67,11 +70,12 @@ with st.form("form_questao"):
             nova_questao = {
                 "texto": texto,
                 "tipo": tipo,
-                "imagem": imagem.getvalue() if imagem else None,
+                "imagem": imagem.read() if imagem else None,
                 "opcoes": opcoes if tipo == "Múltipla Escolha" else None
             }
             st.session_state.questoes.append(nova_questao)
             st.success("Questão adicionada com sucesso!")
+            st.rerun()
 
 # --- Lista de Questões ---
 st.subheader("📋 Questões Adicionadas")
@@ -80,20 +84,21 @@ if not st.session_state.questoes:
     st.info("Nenhuma questão adicionada ainda.")
 else:
     for i, q in enumerate(st.session_state.questoes, 1):
-        st.markdown(f"**{i}. {q['texto']}**")
-        if q["imagem"]:
-            st.image(BytesIO(q["imagem"]), width=350)
-        if q["tipo"] == "Múltipla Escolha":
-            st.write(f"A) {q['opcoes']['A']}")
-            st.write(f"B) {q['opcoes']['B']}")
-            st.write(f"C) {q['opcoes']['C']}")
-            st.write(f"D) {q['opcoes']['D']}")
-        else:
-            st.markdown("_" * 60)
+        with st.container(border=True):
+            st.markdown(f"**{i}. {q['texto']}**")
+            if q["imagem"]:
+                st.image(BytesIO(q["imagem"]), width=350)
+            if q["tipo"] == "Múltipla Escolha":
+                st.write(f"A) {q['opcoes']['A']}")
+                st.write(f"B) {q['opcoes']['B']}")
+                st.write(f"C) {q['opcoes']['C']}")
+                st.write(f"D) {q['opcoes']['D']}")
+            else:
+                st.markdown("_" * 60)
 
-        if st.button(f"🗑️ Excluir Questão {i}", key=f"del_{i}"):
-            st.session_state.questoes.pop(i-1)
-            st.experimental_rerun()
+            if st.button(f"🗑️ Excluir Questão {i}", key=f"del_{i}"):
+                st.session_state.questoes.pop(i-1)
+                st.rerun()
 
 # --- Exportar para Word ---
 st.subheader("📤 Exportar Prova")
@@ -109,6 +114,7 @@ if st.button("💾 Gerar Documento Word"):
 
         # Cabeçalho com logo
         if logo_escola:
+            logo_escola.seek(0)
             doc.add_picture(logo_escola, width=Inches(1.5))
             doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
