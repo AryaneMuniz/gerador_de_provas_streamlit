@@ -186,4 +186,7 @@ if st.button("💾 Gerar Documento Word"):
                 "⬇️ Baixar Prova",
                 data=buffer,
                 file_name=nome_arquivo,
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+        except Exception as e:
+            st.error(f"Erro ao gerar documento: {e}")
