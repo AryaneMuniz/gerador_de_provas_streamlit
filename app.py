@@ -48,7 +48,7 @@ with st.form("dados_finais"):
 modo = "✏️ Editar Questão" if st.session_state.editando_index is not None else "➕ Adicionar Questão"
 st.subheader(modo)
 
-# Limpeza dos campos após adicionar a questão
+# Limpeza dos campos após adicionar a questão (somente ao adicionar, não ao editar)
 if "texto_questao" not in st.session_state:
     st.session_state.texto_questao = ""
 if "imagem_questao" not in st.session_state:
@@ -101,6 +101,7 @@ if st.button(modo):
             st.success("Questão editada com sucesso!")
         else:
             st.session_state.questoes.append(nova_questao)
+            # Limpar campos apenas após adicionar uma nova questão
             st.session_state.texto_questao = ""  # Limpar campo do texto da questão
             st.session_state.imagem_questao = None  # Limpar o campo da imagem
             st.session_state.opcao_a = ""  # Limpar a opção A
@@ -162,11 +163,6 @@ if st.button("💾 Gerar Documento Word"):
             doc.add_paragraph(f"Data: {data_prova.strftime('%d/%m/%Y')}")
             doc.add_paragraph("\n")
 
-            # Adicionar o nome do aluno e a nota
-            doc.add_paragraph(f"Nome do Aluno: {nome_aluno if nome_aluno else '[Nome do Aluno]'}")
-            doc.add_paragraph(f"Nota: {nota if nota else '[Nota]'}\n")
-
-            # Adicionando as questões
             for i, q in enumerate(st.session_state.questoes, 1):
                 doc.add_paragraph(f"{i}. {q['texto']}")
 
@@ -175,7 +171,7 @@ if st.button("💾 Gerar Documento Word"):
                         doc.add_picture(BytesIO(q["imagem"]), width=Inches(4.5))
                         doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
                     except:
-                        doc.add_parágrafo("[Erro ao carregar imagem]")
+                        doc.add_paragraph("[Erro ao carregar imagem]")
 
                 if q["tipo"] == "Múltipla Escolha":
                     doc.add_paragraph(f"A) {q['opcoes']['A']}")
@@ -201,4 +197,3 @@ if st.button("💾 Gerar Documento Word"):
             )
         except Exception as e:
             st.error(f"Erro ao gerar documento: {e}")
-
