@@ -42,20 +42,17 @@ with st.form("form_questao", clear_on_submit=True):
     texto = st.text_area("Texto da Questão", height=150, key="texto_questao")
     imagem = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"], key="imagem_questao")
 
-    # Container para as opções (só aparece se for múltipla escolha)
-    opcoes_container = st.container()
-    
+    # Opções de múltipla escolha (só aparece se o tipo for Múltipla Escolha)
     if tipo == "Múltipla Escolha":
-        with opcoes_container:
-            st.write("Opções de resposta:")
-            col1, col2 = st.columns(2)
-            with col1:
-                opcao_a = st.text_input("Opção A", key="opt_a")
-                opcao_c = st.text_input("Opção C", key="opt_c")
-            with col2:
-                opcao_b = st.text_input("Opção B", key="opt_b")
-                opcao_d = st.text_input("Opção D", key="opt_d")
-            opcoes = {'A': opcao_a, 'B': opcao_b, 'C': opcao_c, 'D': opcao_d}
+        st.write("Opções de resposta:")
+        col1, col2 = st.columns(2)
+        with col1:
+            opcao_a = st.text_input("Opção A", value="", key="opt_a")
+            opcao_c = st.text_input("Opção C", value="", key="opt_c")
+        with col2:
+            opcao_b = st.text_input("Opção B", value="", key="opt_b")
+            opcao_d = st.text_input("Opção D", value="", key="opt_d")
+        opcoes = {'A': opcao_a, 'B': opcao_b, 'C': opcao_c, 'D': opcao_d}
     else:
         opcoes = None
 
