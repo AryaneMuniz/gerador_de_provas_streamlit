@@ -80,7 +80,7 @@ if st.button("📁 Gerar prova em Word"):
         st.warning("⚠️ Adicione ao menos uma questão antes de gerar a prova.")
     else:
         doc = Document()
-        doc.add_heading('Prova', 0)
+        doc.add_heading(f'Prova de {disciplina}', 0)
         doc.add_paragraph(f"Professor: {nome_professor}")
         doc.add_paragraph(f"Disciplina: {disciplina}")
         doc.add_paragraph(f"Série/Turma: {serie}")
@@ -93,9 +93,9 @@ if st.button("📁 Gerar prova em Word"):
                 for letra, alt in zip("ABCD", q["alternativas"]):
                     doc.add_paragraph(f"   {letra}) {alt}")
             else:
-                doc.add_paragraph("   ___________________________________________")
-                doc.add_paragraph("   ___________________________________________")
-                doc.add_paragraph("   ___________________________________________")
+                doc.add_paragraph("   ______________________________")
+                doc.add_paragraph("   ______________________________")
+                doc.add_paragraph("   ______________________________")
             doc.add_paragraph(" ")
 
         nome_arquivo = f"prova_{disciplina}_{serie}.docx"
