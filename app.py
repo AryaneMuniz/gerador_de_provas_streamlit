@@ -54,30 +54,20 @@ with st.form("dados_prova"):
 modo = "✏️ Editar Questão" if st.session_state.editando_index is not None else "➕ Adicionar Questão"
 st.subheader(modo)
 
-# Limpar campos após clicar em "Apagar Textos"
-if st.button("Apagar Textos", key="apagar_textos"):
-    st.session_state.texto_questao = ""
-    st.session_state.imagem_questao = None
-    st.session_state.opcao_a = ""
-    st.session_state.opcao_b = ""
-    st.session_state.opcao_c = ""
-    st.session_state.opcao_d = ""
-
 # Tipo de questão
 tipo_questao = st.radio("Tipo:", ["Dissertativa", "Múltipla Escolha"], horizontal=True)
 
 # Campos da questão
-texto_questao = st.text_area("Texto da Questão", height=250, value=st.session_state.texto_questao)
-imagem_questao = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"], key="img_quest", label_visibility="collapsed")
+texto_questao = st.text_area("Texto da Questão", height=250, value=st.session_state.texto_questao, key="campo_texto_questao")
+imagem_questao = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"], key="campo_imagem")
 
 # Mostrar opções apenas se for "Múltipla Escolha"
 if tipo_questao == "Múltipla Escolha":
-    opcao_a = st.text_input("Opção A", value=st.session_state.opcao_a)
-    opcao_b = st.text_input("Opção B", value=st.session_state.opcao_b)
-    opcao_c = st.text_input("Opção C", value=st.session_state.opcao_c)
-    opcao_d = st.text_input("Opção D", value=st.session_state.opcao_d)
+    opcao_a = st.text_input("Opção A", value=st.session_state.opcao_a, key="campo_opcao_a")
+    opcao_b = st.text_input("Opção B", value=st.session_state.opcao_b, key="campo_opcao_b")
+    opcao_c = st.text_input("Opção C", value=st.session_state.opcao_c, key="campo_opcao_c")
+    opcao_d = st.text_input("Opção D", value=st.session_state.opcao_d, key="campo_opcao_d")
 else:
-    # Limpar as opções caso a questão seja dissertativa
     st.session_state.opcao_a = ""
     st.session_state.opcao_b = ""
     st.session_state.opcao_c = ""
@@ -102,15 +92,16 @@ if st.button(modo):
             st.success("Questão editada com sucesso!")
         else:
             st.session_state.questoes.append(nova_questao)
-            # Limpar os campos após adicionar a questão
-            st.session_state.texto_questao = ""  # Limpar campo do texto da questão
-            st.session_state.imagem_questao = None  # Limpar o campo da imagem
-            st.session_state.opcao_a = ""  # Limpar a opção A
-            st.session_state.opcao_b = ""  # Limpar a opção B
-            st.session_state.opcao_c = ""  # Limpar a opção C
-            st.session_state.opcao_d = ""  # Limpar a opção D
             st.success("Questão adicionada!")
 
+        # Limpar os campos
+        st.session_state.texto_questao = ""
+        st.session_state.imagem_questao = None
+        st.session_state.opcao_a = ""
+        st.session_state.opcao_b = ""
+        st.session_state.opcao_c = ""
+        st.session_state.opcao_d = ""
+        st.experimental_rerun()
     else:
         st.warning("Digite o texto da questão!")
 
@@ -133,6 +124,12 @@ for i, q in enumerate(st.session_state.questoes):
     col_editar, col_excluir = st.columns([1, 1])
     if col_editar.button("✏️ Editar", key=f"editar_{i}"):
         st.session_state.editando_index = i
+        questao = st.session_state.questoes[i]
+        st.session_state.texto_questao = questao["texto"]
+        st.session_state.opcao_a = questao["opcoes"]["A"] if questao["opcoes"] else ""
+        st.session_state.opcao_b = questao["opcoes"]["B"] if questao["opcoes"] else ""
+        st.session_state.opcao_c = questao["opcoes"]["C"] if questao["opcoes"] else ""
+        st.session_state.opcao_d = questao["opcoes"]["D"] if questao["opcoes"] else ""
         st.experimental_rerun()
     if col_excluir.button("🗑️ Excluir", key=f"excluir_{i}"):
         st.session_state.questoes.pop(i)
@@ -166,28 +163,25 @@ if st.button("💾 Gerar Documento Word"):
 
             for i, q in enumerate(st.session_state.questoes, 1):
                 doc.add_paragraph(f"{i}. {q['texto']}")
-
                 if q["imagem"]:
                     try:
                         doc.add_picture(BytesIO(q["imagem"]), width=Inches(4.5))
                         doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
                     except:
                         doc.add_paragraph("[Erro ao carregar imagem]")
-
                 if q["tipo"] == "Múltipla Escolha":
                     doc.add_paragraph(f"A) {q['opcoes']['A']}")
                     doc.add_paragraph(f"B) {q['opcoes']['B']}")
                     doc.add_paragraph(f"C) {q['opcoes']['C']}")
-                    doc.add_parágrafo(f"D) {q['opcoes']['D']}")
+                    doc.add_paragraph(f"D) {q['opcoes']['D']}")
                 else:
                     for _ in range(5):
                         doc.add_paragraph("_" * 80)
-
                 doc.add_paragraph()
 
             nome_arquivo = f"Prova_{disciplina}_{serie}_{bimestre}.docx".replace(" ", "_")
             buffer = BytesIO()
-            doc.save(buffer)  # Salvar corretamente
+            doc.save(buffer)
             buffer.seek(0)
 
             st.download_button(
@@ -198,3 +192,4 @@ if st.button("💾 Gerar Documento Word"):
             )
         except Exception as e:
             st.error(f"Erro ao gerar documento: {e}")
+
