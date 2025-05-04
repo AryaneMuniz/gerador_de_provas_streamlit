@@ -10,11 +10,6 @@ import io
 st.set_page_config(page_title="Gerador de Provas", layout="centered")
 st.title("📝 Gerador de Provas Escolares")
 
-# --- FUNÇÕES ---
-def limpar_pasta_temp():
-    """Função mantida apenas por segurança, mas não é mais usada"""
-    pass
-
 # --- UPLOAD DO LOGO (CABEÇALHO) ---
 st.sidebar.header("Configurações do Cabeçalho")
 logo_escola = st.sidebar.file_uploader(
@@ -46,7 +41,7 @@ if "questoes" not in st.session_state:
 # --- ADIÇÃO DE QUESTÕES ---
 st.subheader("✍️ Adicionar Questão")
 tipo_questao = st.radio("Tipo:", ["Dissertativa", "Múltipla Escolha"], horizontal=True)
-texto_questao = st.text_area("Texto da Questão", height=150)
+texto_questao = st.text_area("Texto da Questão", height=500)
 imagem_questao = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"])
 
 if tipo_questao == "Múltipla Escolha":
@@ -57,7 +52,6 @@ if tipo_questao == "Múltipla Escolha":
     with col2:
         opcao_c = st.text_input("Opção C")
         opcao_d = st.text_input("Opção D")
-    resposta = st.selectbox("Resposta Correta", ["A", "B", "C", "D"])
 
 if st.button("➕ Adicionar Questão"):
     if texto_questao.strip():
@@ -67,8 +61,7 @@ if st.button("➕ Adicionar Questão"):
             "imagem": imagem_questao.getvalue() if imagem_questao else None,
             "opcoes": None if tipo_questao == "Dissertativa" else {
                 "A": opcao_a, "B": opcao_b, "C": opcao_c, "D": opcao_d
-            },
-            "resposta": resposta if tipo_questao == "Múltipla Escolha" else None
+            }
         }
         st.session_state.questoes.append(questao)
         st.success("Questão adicionada!")
@@ -90,7 +83,6 @@ else:
         if q["tipo"] == "Múltipla Escolha":
             st.write(f"A) {q['opcoes']['A']} | B) {q['opcoes']['B']}")
             st.write(f"C) {q['opcoes']['C']} | D) {q['opcoes']['D']}")
-            st.write(f"✅ Resposta: {q['resposta']}")
         st.write("---")
 
 # --- GERAR DOCUMENTO WORD ---
@@ -110,8 +102,7 @@ if st.button("💾 Gerar Documento Word"):
             # CABEÇALHO COM LOGO
             if logo_escola:
                 try:
-                    logo_bytes = logo_escola.getvalue()
-                    image_stream = io.BytesIO(logo_bytes)
+                    image_stream = io.BytesIO(logo_escola.getvalue())
                     image_stream.seek(0)
                     doc.add_picture(image_stream, width=Inches(1.18))
                     last_paragraph = doc.paragraphs[-1]
@@ -150,7 +141,6 @@ if st.button("💾 Gerar Documento Word"):
                     doc.add_paragraph(f"B) {q['opcoes']['B']}")
                     doc.add_paragraph(f"C) {q['opcoes']['C']}")
                     doc.add_paragraph(f"D) {q['opcoes']['D']}")
-                    doc.add_paragraph(f"Resposta correta: {q['resposta']}")
 
                 doc.add_paragraph()
 
