@@ -2,8 +2,8 @@ import streamlit as st
 from docx import Document
 from datetime import date
 
+# Configuração do título da página
 st.set_page_config(page_title="Gerador de Provas", layout="centered")
-
 st.title("📝 Gerador de Provas Escolares")
 
 # Campos principais
@@ -27,11 +27,32 @@ if "questoes" not in st.session_state:
 
 st.subheader("✍️ Questões")
 
+# Seleção de tipo de questão
+tipo_questao = st.selectbox(
+    "Selecione o tipo de questão:",
+    ["Dissertativa", "Múltipla Escolha"]
+)
+
 # Adicionar nova questão
 nova_questao = st.text_area("Digite a nova questão")
+if tipo_questao == "Múltipla Escolha":
+    opcao_a = st.text_input("Opção A")
+    opcao_b = st.text_input("Opção B")
+    opcao_c = st.text_input("Opção C")
+    opcao_d = st.text_input("Opção D")
+    resposta_correta = st.selectbox("Selecione a resposta correta:", ["A", "B", "C", "D"])
+else:
+    opcao_a = opcao_b = opcao_c = opcao_d = resposta_correta = None
+
 if st.button("➕ Adicionar questão"):
     if nova_questao.strip() != "":
-        st.session_state.questoes.append(nova_questao.strip())
+        if tipo_questao == "Múltipla Escolha" and (opcao_a and opcao_b and opcao_c and opcao_d):
+            # Formatação para questões de múltipla escolha
+            questao = f"{nova_questao}\nA) {opcao_a}\nB) {opcao_b}\nC) {opcao_c}\nD) {opcao_d}\nResposta correta: {resposta_correta}"
+        else:
+            # Questão dissertativa
+            questao = nova_questao
+        st.session_state.questoes.append(questao.strip())
         st.success("Questão adicionada com sucesso!")
     else:
         st.warning("Digite algo antes de adicionar.")
@@ -60,7 +81,10 @@ if st.button("📥 Gerar prova em Word"):
     else:
         doc = Document()
 
+        # TÍTULO PERSONALIZADO (com disciplina e bimestre)
         doc.add_heading(f"PROVA DE {disciplina.upper()} – {bimestre.upper()}", 0)
+
+        # Informações adicionais
         doc.add_paragraph(f"Professor: {nome_professor}")
         doc.add_paragraph(f"Disciplina: {disciplina}")
         doc.add_paragraph(f"Série/Turma: {serie}")
@@ -68,16 +92,20 @@ if st.button("📥 Gerar prova em Word"):
         doc.add_paragraph(f"Data: {data_prova.strftime('%d/%m/%Y')}")
         doc.add_paragraph(" ")
 
+        # Adicionar questões no documento
         for i, questao in enumerate(st.session_state.questoes, 1):
             doc.add_paragraph(f"{i}. {questao}")
 
+        # Salvar o arquivo
         doc_path = "prova_gerada.docx"
         doc.save(doc_path)
 
+        # Botão para download
         with open(doc_path, "rb") as file:
-            btn = st.download_button(
+            st.download_button(
                 label="📥 Baixar Prova",
                 data=file,
                 file_name=doc_path,
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
+
