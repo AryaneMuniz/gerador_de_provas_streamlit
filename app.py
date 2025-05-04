@@ -48,18 +48,13 @@ with st.form("dados_finais"):
 modo = "✏️ Editar Questão" if st.session_state.editando_index is not None else "➕ Adicionar Questão"
 st.subheader(modo)
 
-# Limpeza dos campos após adicionar a questão (somente ao adicionar, não ao editar)
-if "texto_questao" not in st.session_state:
+# Limpar campos após clicar em "Adicionar Questão"
+if st.button("➕ Adicionar Questão"):
     st.session_state.texto_questao = ""
-if "imagem_questao" not in st.session_state:
     st.session_state.imagem_questao = None
-if "opcao_a" not in st.session_state:
     st.session_state.opcao_a = ""
-if "opcao_b" not in st.session_state:
     st.session_state.opcao_b = ""
-if "opcao_c" not in st.session_state:
     st.session_state.opcao_c = ""
-if "opcao_d" not in st.session_state:
     st.session_state.opcao_d = ""
 
 # Tipo de questão
@@ -101,7 +96,7 @@ if st.button(modo):
             st.success("Questão editada com sucesso!")
         else:
             st.session_state.questoes.append(nova_questao)
-            # Limpar campos apenas após adicionar uma nova questão
+            # Limpar campos após adicionar uma nova questão
             st.session_state.texto_questao = ""  # Limpar campo do texto da questão
             st.session_state.imagem_questao = None  # Limpar o campo da imagem
             st.session_state.opcao_a = ""  # Limpar a opção A
