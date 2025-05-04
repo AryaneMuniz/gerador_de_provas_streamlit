@@ -169,7 +169,7 @@ if st.button("💾 Gerar Documento Word"):
                 if q["tipo"] == "Múltipla Escolha":
                     doc.add_paragraph(f"A) {q['opcoes']['A']}")
                     doc.add_paragraph(f"B) {q['opcoes']['B']}")
-                    doc.add_parágrafo(f"C) {q['opcoes']['C']}")
+                    doc.add_paragraph(f"C) {q['opcoes']['C']}")
                     doc.add_paragraph(f"D) {q['opcoes']['D']}")
                 else:
                     for _ in range(5):
@@ -186,7 +186,4 @@ if st.button("💾 Gerar Documento Word"):
                 "⬇️ Baixar Prova",
                 data=buffer,
                 file_name=nome_arquivo,
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
-        except Exception as e:
-            st.error(f"Erro ao gerar documento: {str(e)}")
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml
