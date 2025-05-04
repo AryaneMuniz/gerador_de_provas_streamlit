@@ -42,19 +42,37 @@ with st.form("dados_prova"):
 modo = "✏️ Editar Questão" if st.session_state.editando_index is not None else "➕ Adicionar Questão"
 st.subheader(modo)
 
-tipo_questao = st.radio("Tipo:", ["Dissertativa", "Múltipla Escolha"], horizontal=True)
-texto_questao = st.text_area("Texto da Questão", height=250)
-imagem_questao = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"], key="img_quest")
+# Limpeza dos campos após adicionar a questão
+if "texto_questao" not in st.session_state:
+    st.session_state.texto_questao = ""
+if "imagem_questao" not in st.session_state:
+    st.session_state.imagem_questao = None
+if "opcao_a" not in st.session_state:
+    st.session_state.opcao_a = ""
+if "opcao_b" not in st.session_state:
+    st.session_state.opcao_b = ""
+if "opcao_c" not in st.session_state:
+    st.session_state.opcao_c = ""
+if "opcao_d" not in st.session_state:
+    st.session_state.opcao_d = ""
 
-opcao_a = opcao_b = opcao_c = opcao_d = ""
+tipo_questao = st.radio("Tipo:", ["Dissertativa", "Múltipla Escolha"], horizontal=True)
+texto_questao = st.text_area("Texto da Questão", height=250, value=st.session_state.texto_questao)
+imagem_questao = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"], key="img_quest", 
+                                  label_visibility="collapsed")
+opcao_a = st.text_input("Opção A", value=st.session_state.opcao_a)
+opcao_b = st.text_input("Opção B", value=st.session_state.opcao_b)
+opcao_c = st.text_input("Opção C", value=st.session_state.opcao_c)
+opcao_d = st.text_input("Opção D", value=st.session_state.opcao_d)
+
 if tipo_questao == "Múltipla Escolha":
     col1, col2 = st.columns(2)
     with col1:
-        opcao_a = st.text_input("Opção A")
-        opcao_b = st.text_input("Opção B")
+        opcao_a = st.text_input("Opção A", value=st.session_state.opcao_a)
+        opcao_b = st.text_input("Opção B", value=st.session_state.opcao_b)
     with col2:
-        opcao_c = st.text_input("Opção C")
-        opcao_d = st.text_input("Opção D")
+        opcao_c = st.text_input("Opção C", value=st.session_state.opcao_c)
+        opcao_d = st.text_input("Opção D", value=st.session_state.opcao_d)
 
 if st.button(modo):
     if texto_questao.strip():
@@ -74,7 +92,14 @@ if st.button(modo):
             st.success("Questão editada com sucesso!")
         else:
             st.session_state.questoes.append(nova_questao)
+            st.session_state.texto_questao = ""  # Limpar campo do texto da questão
+            st.session_state.imagem_questao = None  # Limpar o campo da imagem
+            st.session_state.opcao_a = ""  # Limpar a opção A
+            st.session_state.opcao_b = ""  # Limpar a opção B
+            st.session_state.opcao_c = ""  # Limpar a opção C
+            st.session_state.opcao_d = ""  # Limpar a opção D
             st.success("Questão adicionada!")
+
     else:
         st.warning("Digite o texto da questão!")
 
@@ -97,10 +122,10 @@ for i, q in enumerate(st.session_state.questoes):
     col_editar, col_excluir = st.columns([1, 1])
     if col_editar.button("✏️ Editar", key=f"editar_{i}"):
         st.session_state.editando_index = i
-        st.experimental_rerun()  # Aqui estamos forçando a reinicialização, o que pode ser evitado de outra maneira
+        st.experimental_rerun()
     if col_excluir.button("🗑️ Excluir", key=f"excluir_{i}"):
         st.session_state.questoes.pop(i)
-        st.experimental_rerun()  # Aqui também podemos evitar o uso de `rerun` se gerenciarmos bem o estado
+        st.experimental_rerun()
 
 # --- Exportação da Prova ---
 st.subheader("📤 Exportar Prova")
