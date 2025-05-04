@@ -56,24 +56,27 @@ if "opcao_c" not in st.session_state:
 if "opcao_d" not in st.session_state:
     st.session_state.opcao_d = ""
 
+# Tipo de questão
 tipo_questao = st.radio("Tipo:", ["Dissertativa", "Múltipla Escolha"], horizontal=True)
+
+# Campos da questão
 texto_questao = st.text_area("Texto da Questão", height=250, value=st.session_state.texto_questao)
-imagem_questao = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"], key="img_quest", 
-                                  label_visibility="collapsed")
-opcao_a = st.text_input("Opção A", value=st.session_state.opcao_a)
-opcao_b = st.text_input("Opção B", value=st.session_state.opcao_b)
-opcao_c = st.text_input("Opção C", value=st.session_state.opcao_c)
-opcao_d = st.text_input("Opção D", value=st.session_state.opcao_d)
+imagem_questao = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"], key="img_quest", label_visibility="collapsed")
 
+# Mostrar opções apenas se for "Múltipla Escolha"
 if tipo_questao == "Múltipla Escolha":
-    col1, col2 = st.columns(2)
-    with col1:
-        opcao_a = st.text_input("Opção A", value=st.session_state.opcao_a)
-        opcao_b = st.text_input("Opção B", value=st.session_state.opcao_b)
-    with col2:
-        opcao_c = st.text_input("Opção C", value=st.session_state.opcao_c)
-        opcao_d = st.text_input("Opção D", value=st.session_state.opcao_d)
+    opcao_a = st.text_input("Opção A", value=st.session_state.opcao_a)
+    opcao_b = st.text_input("Opção B", value=st.session_state.opcao_b)
+    opcao_c = st.text_input("Opção C", value=st.session_state.opcao_c)
+    opcao_d = st.text_input("Opção D", value=st.session_state.opcao_d)
+else:
+    # Limpar as opções caso a questão seja dissertativa
+    st.session_state.opcao_a = ""
+    st.session_state.opcao_b = ""
+    st.session_state.opcao_c = ""
+    st.session_state.opcao_d = ""
 
+# Ao clicar no botão de adicionar/editar
 if st.button(modo):
     if texto_questao.strip():
         nova_questao = {
@@ -176,14 +179,4 @@ if st.button("💾 Gerar Documento Word"):
 
             nome_arquivo = f"Prova_{disciplina}_{serie}_{bimestre}.docx".replace(" ", "_")
             buffer = BytesIO()
-            doc.save(buffer)
-            buffer.seek(0)
-
-            st.download_button(
-                "⬇️ Baixar Prova",
-                data=buffer,
-                file_name=nome_arquivo,
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
-        except Exception as e:
-            st.error(f"Erro ao gerar documento: {str(e)}")
+            doc.save
