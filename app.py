@@ -34,7 +34,6 @@ with st.sidebar:
 # --- Formulário de dados principais ---
 with st.form("dados_prova"):
     st.subheader("📋 Dados da Prova")
-    nome_escola = st.text_input("Nome da Escola")
     nome_professor = st.text_input("Nome do Professor*", placeholder="Obrigatório")
     disciplina = st.text_input("Disciplina*", placeholder="Obrigatório")
     serie = st.selectbox("Série/Turma*", [
