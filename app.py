@@ -19,6 +19,7 @@ logo_escola = st.sidebar.file_uploader("📌 Logo da Escola", type=["png", "jpg"
 # --- Dados da prova ---
 with st.form("form_dados"):
     st.subheader("📘 Dados da Prova")
+    nome_escola = st.text_input("Nome da Escola")
     nome_professor = st.text_input("Nome do Professor")
     disciplina = st.text_input("Disciplina")
     serie = st.selectbox("Série/Turma", [
@@ -41,17 +42,21 @@ with st.form("form_questao"):
     texto = st.text_area("Texto da Questão", height=150)
     imagem = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"], key="imagem_questao")
 
-    opcoes = {}
+    # Mostrar opções apenas para múltipla escolha
     if tipo == "Múltipla Escolha":
+        st.write("Opções de resposta:")
         col1, col2 = st.columns(2)
         with col1:
-            opcoes["A"] = st.text_input("Opção A", key="opt_a")
-            opcoes["C"] = st.text_input("Opção C", key="opt_c")
+            opcao_a = st.text_input("Opção A", key="opt_a")
+            opcao_c = st.text_input("Opção C", key="opt_c")
         with col2:
-            opcoes["B"] = st.text_input("Opção B", key="opt_b")
-            opcoes["D"] = st.text_input("Opção D", key="opt_d")
+            opcao_b = st.text_input("Opção B", key="opt_b")
+            opcao_d = st.text_input("Opção D", key="opt_d")
+        opcoes = {'A': opcao_a, 'B': opcao_b, 'C': opcao_c, 'D': opcao_d}
+    else:
+        opcoes = None
 
-    submitted = st.form_submit_button("Adicionar")
+    submitted = st.form_submit_button("Adicionar Questão")
 
     if submitted:
         if not texto.strip():
@@ -71,21 +76,24 @@ with st.form("form_questao"):
 # --- Lista de Questões ---
 st.subheader("📋 Questões Adicionadas")
 
-for i, q in enumerate(st.session_state.questoes):
-    st.markdown(f"**{i+1}. {q['texto']}**")
-    if q["imagem"]:
-        st.image(BytesIO(q["imagem"]), width=350)
-    if q["tipo"] == "Múltipla Escolha":
-        st.write(f"A) {q['opcoes']['A']}")
-        st.write(f"B) {q['opcoes']['B']}")
-        st.write(f"C) {q['opcoes']['C']}")
-        st.write(f"D) {q['opcoes']['D']}")
-    else:
-        st.markdown("_" * 60)
+if not st.session_state.questoes:
+    st.info("Nenhuma questão adicionada ainda.")
+else:
+    for i, q in enumerate(st.session_state.questoes, 1):
+        st.markdown(f"**{i}. {q['texto']}**")
+        if q["imagem"]:
+            st.image(BytesIO(q["imagem"]), width=350)
+        if q["tipo"] == "Múltipla Escolha":
+            st.write(f"A) {q['opcoes']['A']}")
+            st.write(f"B) {q['opcoes']['B']}")
+            st.write(f"C) {q['opcoes']['C']}")
+            st.write(f"D) {q['opcoes']['D']}")
+        else:
+            st.markdown("_" * 60)
 
-    if st.button(f"🗑️ Excluir Questão {i+1}", key=f"del_{i}"):
-        st.session_state.questoes.pop(i)
-        st.experimental_rerun()
+        if st.button(f"🗑️ Excluir Questão {i}", key=f"del_{i}"):
+            st.session_state.questoes.pop(i-1)
+            st.experimental_rerun()
 
 # --- Exportar para Word ---
 st.subheader("📤 Exportar Prova")
@@ -99,20 +107,24 @@ if st.button("💾 Gerar Documento Word"):
         style.font.name = 'Arial'
         style.font.size = Pt(12)
 
+        # Cabeçalho com logo
         if logo_escola:
-            doc.add_picture(logo_escola, width=Inches(1.2))
+            doc.add_picture(logo_escola, width=Inches(1.5))
             doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
+        # Informações da prova
+        doc.add_paragraph(nome_escola, style='Heading 1').alignment = WD_ALIGN_PARAGRAPH.CENTER
         doc.add_paragraph()
-        titulo = doc.add_paragraph()
-        titulo.add_run(f"PROVA DE {disciplina.upper()} - {bimestre.upper()}").bold = True
-        titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
+        doc.add_paragraph(f"Disciplina: {disciplina}").bold = True
         doc.add_paragraph(f"Professor: {nome_professor}")
         doc.add_paragraph(f"Turma: {serie}")
+        doc.add_paragraph(f"Bimestre: {bimestre}")
         doc.add_paragraph(f"Data: {data_prova.strftime('%d/%m/%Y')}")
         doc.add_paragraph()
+        doc.add_paragraph("Prova Escrita").bold = True
+        doc.add_paragraph()
 
+        # Adicionar questões
         for i, q in enumerate(st.session_state.questoes, 1):
             doc.add_paragraph(f"{i}. {q['texto']}")
             if q["imagem"]:
@@ -127,10 +139,11 @@ if st.button("💾 Gerar Documento Word"):
                 doc.add_paragraph(f"C) {q['opcoes']['C']}")
                 doc.add_paragraph(f"D) {q['opcoes']['D']}")
             else:
-                for _ in range(5):
+                for _ in range(5):  # Linhas para resposta dissertativa
                     doc.add_paragraph("_" * 80)
             doc.add_paragraph()
 
+        # Salvar documento
         nome_arquivo = f"Prova_{disciplina}_{serie}_{bimestre}.docx".replace(" ", "_")
         buffer = BytesIO()
         doc.save(buffer)
