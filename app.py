@@ -9,28 +9,32 @@ import os
 st.set_page_config(page_title="Gerador de Provas", layout="centered")
 st.title("📝 Gerador de Provas Escolares")
 
-# Inicialização segura da session_state
-if 'questoes' not in st.session_state:
-    st.session_state.questoes = []
-
-# --- FUNÇÕES AUXILIARES ---
+# --- FUNÇÕES ---
 def criar_pasta_temp():
-    """Cria pasta temporária para armazenar imagens"""
+    """Cria pasta para arquivos temporários"""
     if not os.path.exists("temp"):
         os.makedirs("temp")
 
 def limpar_pasta_temp():
-    """Remove arquivos temporários após uso"""
+    """Remove arquivos temporários"""
     if os.path.exists("temp"):
         for file in os.listdir("temp"):
             os.remove(os.path.join("temp", file))
+
+# --- UPLOAD DO LOGO (CABEÇALHO) ---
+st.sidebar.header("Configurações do Cabeçalho")
+logo_escola = st.sidebar.file_uploader(
+    "📌 Upload do Logo (PNG/JPG)", 
+    type=["png", "jpg", "jpeg"],
+    key="logo_header"
+)
 
 # --- FORMULÁRIO PRINCIPAL ---
 with st.form("dados_prova"):
     nome_professor = st.text_input("Nome do Professor")
     disciplina = st.text_input("Disciplina")
     serie = st.selectbox("Série/Turma", [
-        "1º ano - Ensino Fundamental", "2º ano - Ensino Fundamental",
+        "1º ano - Ensino Fundamental", "2º ano - Ensino Fundamental", 
         "3º ano - Ensino Fundamental", "4º ano - Ensino Fundamental",
         "5º ano - Ensino Fundamental", "6º ano - Ensino Fundamental",
         "7º ano - Ensino Fundamental", "8º ano - Ensino Fundamental",
@@ -41,12 +45,15 @@ with st.form("dados_prova"):
     data_prova = st.date_input("Data da Prova", value=date.today())
     st.form_submit_button("Salvar Configurações")
 
-# --- ADIÇÃO DE QUESTÕES ---
-st.subheader("✍️ Adicionar Questões")
+# --- GERENCIAMENTO DE QUESTÕES ---
+if "questoes" not in st.session_state:
+    st.session_state.questoes = []
 
-tipo_questao = st.radio("Tipo de questão:", ["Dissertativa", "Múltipla Escolha"], horizontal=True)
-nova_questao = st.text_area("Texto da questão", height=100)
-imagem_questao = st.file_uploader("Imagem para a questão (opcional)", type=["png", "jpg", "jpeg"])
+# --- ADIÇÃO DE QUESTÕES ---
+st.subheader("✍️ Adicionar Questão")
+tipo_questao = st.radio("Tipo:", ["Dissertativa", "Múltipla Escolha"], horizontal=True)
+texto_questao = st.text_area("Texto da Questão", height=150)
+imagem_questao = st.file_uploader("Imagem (opcional)", type=["png", "jpg", "jpeg"])
 
 if tipo_questao == "Múltipla Escolha":
     col1, col2 = st.columns(2)
@@ -56,122 +63,119 @@ if tipo_questao == "Múltipla Escolha":
     with col2:
         opcao_c = st.text_input("Opção C")
         opcao_d = st.text_input("Opção D")
-    resposta_correta = st.selectbox("Resposta correta:", ["A", "B", "C", "D"])
+    resposta = st.selectbox("Resposta Correta", ["A", "B", "C", "D"])
 
 if st.button("➕ Adicionar Questão"):
-    if nova_questao.strip():
-        questao_data = {
-            "texto": nova_questao,
+    if texto_questao.strip():
+        questao = {
+            "texto": texto_questao,
             "tipo": tipo_questao,
             "imagem": None,
-            "opcoes": {
-                "A": opcao_a if tipo_questao == "Múltipla Escolha" else "",
-                "B": opcao_b if tipo_questao == "Múltipla Escolha" else "",
-                "C": opcao_c if tipo_questao == "Múltipla Escolha" else "",
-                "D": opcao_d if tipo_questao == "Múltipla Escolha" else ""
+            "opcoes": None if tipo_questao == "Dissertativa" else {
+                "A": opcao_a, "B": opcao_b, "C": opcao_c, "D": opcao_d
             },
-            "resposta": resposta_correta if tipo_questao == "Múltipla Escolha" else None
+            "resposta": resposta if tipo_questao == "Múltipla Escolha" else None
         }
         
         if imagem_questao:
             criar_pasta_temp()
-            imagem_path = os.path.join("temp", imagem_questao.name)
-            with open(imagem_path, "wb") as f:
+            img_path = os.path.join("temp", imagem_questao.name)
+            with open(img_path, "wb") as f:
                 f.write(imagem_questao.getbuffer())
-            questao_data["imagem"] = imagem_path
+            questao["imagem"] = img_path
         
-        st.session_state.questoes.append(questao_data)
-        st.success("Questão adicionada com sucesso!")
+        st.session_state.questoes.append(questao)
+        st.success("Questão adicionada!")
     else:
-        st.warning("Por favor, insira o texto da questão.")
+        st.warning("Digite o texto da questão!")
 
 # --- VISUALIZAÇÃO DAS QUESTÕES ---
-st.subheader("📋 Questões da Prova")
-
+st.subheader("📋 Pré-visualização da Prova")
 if not st.session_state.questoes:
-    st.info("Nenhuma questão adicionada ainda.")
+    st.info("Nenhuma questão adicionada")
 else:
-    for i, questao in enumerate(st.session_state.questoes, 1):
-        # Verificação segura da estrutura da questão
-        if not isinstance(questao, dict) or "texto" not in questao:
-            st.error(f"Estrutura inválida na questão {i}")
-            continue
-            
-        st.markdown(f"### Questão {i}")
-        st.write(questao.get("texto", "Texto não disponível"))
-        
-        if questao.get("imagem"):
-            try:
-                st.image(questao["imagem"], width=400)
-            except Exception as e:
-                st.error(f"Erro ao carregar imagem: {str(e)}")
-        
-        if questao.get("tipo") == "Múltipla Escolha":
-            st.markdown("**Opções:**")
-            cols = st.columns(2)
-            with cols[0]:
-                st.write(f"**A)** {questao['opcoes'].get('A', '')}")
-                st.write(f"**B)** {questao['opcoes'].get('B', '')}")
-            with cols[1]:
-                st.write(f"**C)** {questao['opcoes'].get('C', '')}")
-                st.write(f"**D)** {questao['opcoes'].get('D', '')}")
-            st.write(f"**Resposta correta:** {questao.get('resposta', '')}")
-        
-        # Botões de ação
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button(f"✏️ Editar Questão {i}", key=f"edit_{i}"):
-                pass  # Implementar lógica de edição
-        with col2:
-            if st.button(f"❌ Remover Questão {i}", key=f"del_{i}"):
-                st.session_state.questoes.pop(i-1)
-                st.experimental_rerun()
-        st.markdown("---")
+    for i, q in enumerate(st.session_state.questoes, 1):
+        st.markdown(f"**Questão {i}:** {q['texto']}")
+        if q["imagem"]:
+            st.image(q["imagem"], width=400)
+        if q["tipo"] == "Múltipla Escolha":
+            st.write(f"A) {q['opcoes']['A']} | B) {q['opcoes']['B']}")
+            st.write(f"C) {q['opcoes']['C']} | D) {q['opcoes']['D']}")
+            st.write(f"✅ Resposta: {q['resposta']}")
+        st.write("---")
 
 # --- GERAR DOCUMENTO WORD ---
-st.subheader("📤 Gerar Prova em Word")
-
-if st.button("🖨️ Gerar Documento"):
+st.subheader("📤 Exportar Prova")
+if st.button("💾 Gerar Documento Word"):
     if not st.session_state.questoes:
-        st.error("Adicione pelo menos uma questão!")
+        st.error("Adicione questões primeiro!")
     else:
         try:
             doc = Document()
+            
+            # CONFIGURAÇÃO DO DOCUMENTO
             style = doc.styles['Normal']
             style.font.name = 'Arial'
             style.font.size = Pt(12)
             
-            # Adicionar questões ao documento
-            for i, questao in enumerate(st.session_state.questoes, 1):
-                if not isinstance(questao, dict):
-                    continue
-                    
-                doc.add_paragraph(f"{i}. {questao.get('texto', '')}")
+            # CABEÇALHO COM LOGO
+            if logo_escola:
+                criar_pasta_temp()
+                logo_path = os.path.join("temp", "logo_cabecalho." + logo_escola.name.split(".")[-1])
+                with open(logo_path, "wb") as f:
+                    f.write(logo_escola.getbuffer())
                 
-                if questao.get("imagem"):
+                # Adiciona logo (largura de 3cm)
+                doc.add_picture(logo_path, width=Inches(1.18))
+                last_paragraph = doc.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                doc.add_paragraph()
+            
+            # TÍTULO DA PROVA
+            titulo = doc.add_paragraph()
+            titulo.add_run(f"PROVA DE {disciplina.upper()}").bold = True
+            titulo.add_run(f" - {bimestre.upper()}\n").bold = True
+            titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            
+            # INFORMAÇÕES
+            doc.add_paragraph(f"Professor: {nome_professor}")
+            doc.add_paragraph(f"Turma: {serie}")
+            doc.add_paragraph(f"Data: {data_prova.strftime('%d/%m/%Y')}")
+            doc.add_paragraph("\n")
+            
+            # QUESTÕES
+            for i, q in enumerate(st.session_state.questoes, 1):
+                doc.add_paragraph(f"{i}. {q['texto']}")
+                
+                if q["imagem"]:
                     try:
-                        doc.add_picture(questao["imagem"], width=Inches(4.5))
+                        doc.add_picture(q["imagem"], width=Inches(4.5))
                         doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    except Exception as e:
-                        st.error(f"Erro na imagem da questão {i}: {str(e)}")
+                    except:
+                        doc.add_paragraph("[Imagem não carregada]")
                 
-                if questao.get("tipo") == "Múltipla Escolha":
-                    for letra in ['A', 'B', 'C', 'D']:
-                        doc.add_paragraph(f"{letra}) {questao['opcoes'].get(letra, '')}")
-                    doc.add_paragraph(f"Resposta correta: {questao.get('resposta', '')}")
+                if q["tipo"] == "Múltipla Escolha":
+                    doc.add_paragraph(f"A) {q['opcoes']['A']}")
+                    doc.add_paragraph(f"B) {q['opcoes']['B']}")
+                    doc.add_paragraph(f"C) {q['opcoes']['C']}")
+                    doc.add_paragraph(f"D) {q['opcoes']['D']}")
+                    doc.add_paragraph(f"Resposta correta: {q['resposta']}")
                 
                 doc.add_paragraph()
             
-            nome_arquivo = f"Prova_{disciplina}_{serie.replace(' ', '_')}.docx"
+            # SALVAR
+            nome_arquivo = f"Prova_{disciplina}_{serie}_{bimestre}.docx".replace(" ", "_")
             doc.save(nome_arquivo)
             
             with open(nome_arquivo, "rb") as f:
                 st.download_button(
                     "⬇️ Baixar Prova",
-                    f,
+                    data=f,
                     file_name=nome_arquivo,
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
+            
+            limpar_pasta_temp()
             st.success("Documento gerado com sucesso!")
         except Exception as e:
-            st.error(f"Erro ao gerar documento: {str(e)}")
+            st.error(f"Erro: {str(e)}")
