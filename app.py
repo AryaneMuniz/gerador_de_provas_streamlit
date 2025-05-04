@@ -28,7 +28,7 @@ serie = st.selectbox(
         "3º ano - Ensino Médio"
     ]
 )
-
+bimestre = st.selectbox("Bimestre", ["1º Bimestre", "2º Bimestre", "3º Bimestre", "4º Bimestre"])
 data_prova = st.date_input("Data da prova", value=date.today())
 
 st.divider()
@@ -80,10 +80,11 @@ if st.button("📁 Gerar prova em Word"):
         st.warning("⚠️ Adicione ao menos uma questão antes de gerar a prova.")
     else:
         doc = Document()
-        doc.add_heading(f'Prova de {disciplina}', 0)
+        doc.add_heading(f'PROVA - {disciplina}', 0)
         doc.add_paragraph(f"Professor: {nome_professor}")
         doc.add_paragraph(f"Disciplina: {disciplina}")
         doc.add_paragraph(f"Série/Turma: {serie}")
+        doc.add_paragraph(f"Bimestre: {bimestre}")
         doc.add_paragraph(f"Data: {data_prova.strftime('%d/%m/%Y')}")
         doc.add_paragraph(" ")
 
