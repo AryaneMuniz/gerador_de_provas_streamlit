@@ -13,6 +13,18 @@ if "questoes" not in st.session_state:
     st.session_state.questoes = []
 if "editando_index" not in st.session_state:
     st.session_state.editando_index = None
+if "texto_questao" not in st.session_state:
+    st.session_state.texto_questao = ""
+if "imagem_questao" not in st.session_state:
+    st.session_state.imagem_questao = None
+if "opcao_a" not in st.session_state:
+    st.session_state.opcao_a = ""
+if "opcao_b" not in st.session_state:
+    st.session_state.opcao_b = ""
+if "opcao_c" not in st.session_state:
+    st.session_state.opcao_c = ""
+if "opcao_d" not in st.session_state:
+    st.session_state.opcao_d = ""
 
 # --- Cabeçalho da escola ---
 st.sidebar.header("Configurações do Cabeçalho")
