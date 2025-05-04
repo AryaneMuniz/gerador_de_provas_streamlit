@@ -1,5 +1,6 @@
 import streamlit as st
 from docx import Document
+from docx.shared import Inches
 from datetime import date
 
 # Configuração do título da página
@@ -35,6 +36,8 @@ tipo_questao = st.selectbox(
 
 # Adicionar nova questão
 nova_questao = st.text_area("Digite a nova questão")
+imagem_questao = st.file_uploader("Escolha uma imagem para a questão (opcional)", type=["jpg", "jpeg", "png"])
+
 if tipo_questao == "Múltipla Escolha":
     opcao_a = st.text_input("Opção A")
     opcao_b = st.text_input("Opção B")
@@ -52,6 +55,13 @@ if st.button("➕ Adicionar questão"):
         else:
             # Questão dissertativa
             questao = nova_questao
+        
+        # Se uma imagem foi carregada, salvar e adicionar ao arquivo temporário
+        if imagem_questao:
+            with open(f"temp_{imagem_questao.name}", "wb") as f:
+                f.write(imagem_questao.getbuffer())
+            questao += f"\n[Imagem adicionada: {imagem_questao.name}]"
+        
         st.session_state.questoes.append(questao.strip())
         st.success("Questão adicionada com sucesso!")
     else:
@@ -95,6 +105,13 @@ if st.button("📥 Gerar prova em Word"):
         # Adicionar questões no documento
         for i, questao in enumerate(st.session_state.questoes, 1):
             doc.add_paragraph(f"{i}. {questao}")
+            if f"[Imagem adicionada:" in questao:
+                # Se a imagem foi mencionada, insira no documento
+                imagem_nome = questao.split(": ")[-1].replace("]", "")
+                try:
+                    doc.add_picture(f"temp_{imagem_nome}", width=Inches(4.0))  # Ajusta a imagem no documento
+                except Exception as e:
+                    st.error(f"Erro ao adicionar a imagem: {e}")
 
         # Salvar o arquivo
         doc_path = "prova_gerada.docx"
@@ -108,4 +125,3 @@ if st.button("📥 Gerar prova em Word"):
                 file_name=doc_path,
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-
