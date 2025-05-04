@@ -11,7 +11,24 @@ if "questoes" not in st.session_state:
 # Cabeçalho da prova
 nome_professor = st.text_input("Nome do professor")
 disciplina = st.text_input("Disciplina")
-serie = st.text_input("Série/Turma")
+serie = st.selectbox(
+    "Série/Turma",
+    [
+        "1º ano - Ensino Fundamental",
+        "2º ano - Ensino Fundamental",
+        "3º ano - Ensino Fundamental",
+        "4º ano - Ensino Fundamental",
+        "5º ano - Ensino Fundamental",
+        "6º ano - Ensino Fundamental",
+        "7º ano - Ensino Fundamental",
+        "8º ano - Ensino Fundamental",
+        "9º ano - Ensino Fundamental",
+        "1º ano - Ensino Médio",
+        "2º ano - Ensino Médio",
+        "3º ano - Ensino Médio"
+    ]
+)
+
 data_prova = st.date_input("Data da prova", value=date.today())
 
 st.divider()
