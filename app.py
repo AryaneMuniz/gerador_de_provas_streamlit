@@ -73,4 +73,76 @@ if st.button("➕ Adicionar questão"):
                 f.write(imagem_questao.getbuffer())
             questao += f"\n[Imagem adicionada: {imagem_questao.name}]"
         
-        st.session_state.questoes.append(questao.strip_
+        st.session_state.questoes.append(questao.strip())  # Corrigido: Fechamento correto do parêntese
+        st.success("Questão adicionada com sucesso!")
+    else:
+        st.warning("Digite algo antes de adicionar.")
+
+# Mostrar questões já adicionadas
+for i, q in enumerate(st.session_state.questoes):
+    st.markdown(f"**{i+1}. {q}**")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button(f"✏️ Editar {i+1}", key=f"edit_{i}"):
+            nova = st.text_area("Edite a questão:", value=q, key=f"edit_input_{i}")
+            if st.button(f"💾 Salvar {i+1}", key=f"save_{i}"):
+                st.session_state.questoes[i] = nova
+                st.experimental_rerun()
+    with col2:
+        if st.button(f"❌ Remover {i+1}", key=f"remove_{i}"):
+            st.session_state.questoes.pop(i)
+            st.experimental_rerun()
+
+# Gerar documento Word
+st.subheader("📁 Gerar Arquivo Word")
+
+if st.button("📥 Gerar prova em Word"):
+    if not st.session_state.questoes:
+        st.warning("⚠️ Adicione ao menos uma questão antes de gerar a prova.")
+    else:
+        doc = Document()
+
+        # TÍTULO PERSONALIZADO (com disciplina e bimestre)
+        doc.add_heading(f"PROVA DE {disciplina.upper()} – {bimestre.upper()}", 0)
+
+        # Informações adicionais
+        doc.add_paragraph(f"Professor: {nome_professor}")
+        doc.add_paragraph(f"Disciplina: {disciplina}")
+        doc.add_paragraph(f"Série/Turma: {serie}")
+        doc.add_paragraph(f"Bimestre: {bimestre}")
+        doc.add_paragraph(f"Data: {data_prova.strftime('%d/%m/%Y')}")
+        doc.add_paragraph(" ")
+
+        # Adicionar questões no documento
+        for i, questao in enumerate(st.session_state.questoes, 1):
+            # Verifica se a questão contém a marca de imagem
+            if "[Imagem adicionada:" in questao:
+                # Extrai o nome da imagem
+                imagem_nome = questao.split(": ")[-1].replace("]", "")
+                imagem_path = os.path.join("temp", imagem_nome)
+                
+                # Adiciona o texto da questão
+                doc.add_paragraph(f"{i}. {questao.split('[Imagem adicionada:')[0].strip()}")
+                
+                # Tenta adicionar a imagem ao Word
+                try:
+                    doc.add_picture(imagem_path, width=Inches(4.0))  # Ajusta a imagem no documento
+                except Exception as e:
+                    st.error(f"Erro ao adicionar a imagem: {e}")
+            else:
+                doc.add_paragraph(f"{i}. {questao}")
+
+        # Gerar nome do arquivo com base na disciplina, série e bimestre
+        nome_arquivo = f"prova_{disciplina.upper()}_{serie} ({bimestre}).docx"
+        
+        # Salvar o arquivo
+        doc.save(nome_arquivo)
+
+        # Botão para download
+        with open(nome_arquivo, "rb") as file:
+            st.download_button(
+                label="📥 Baixar Prova",
+                data=file,
+                file_name=nome_arquivo,
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
