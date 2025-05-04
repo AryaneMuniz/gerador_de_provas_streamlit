@@ -2,6 +2,7 @@ import streamlit as st
 from docx import Document
 from docx.shared import Inches
 from datetime import date
+import os
 
 # Configuração do título da página
 st.set_page_config(page_title="Gerador de Provas", layout="centered")
@@ -58,7 +59,9 @@ if st.button("➕ Adicionar questão"):
         
         # Se uma imagem foi carregada, salvar e adicionar ao arquivo temporário
         if imagem_questao:
-            with open(f"temp_{imagem_questao.name}", "wb") as f:
+            # Defina um caminho temporário para a imagem
+            imagem_path = os.path.join("temp", imagem_questao.name)
+            with open(imagem_path, "wb") as f:
                 f.write(imagem_questao.getbuffer())
             questao += f"\n[Imagem adicionada: {imagem_questao.name}]"
         
@@ -105,11 +108,13 @@ if st.button("📥 Gerar prova em Word"):
         # Adicionar questões no documento
         for i, questao in enumerate(st.session_state.questoes, 1):
             doc.add_paragraph(f"{i}. {questao}")
+            
+            # Verificar se há uma imagem associada à questão
             if f"[Imagem adicionada:" in questao:
-                # Se a imagem foi mencionada, insira no documento
                 imagem_nome = questao.split(": ")[-1].replace("]", "")
+                imagem_path = os.path.join("temp", imagem_nome)
                 try:
-                    doc.add_picture(f"temp_{imagem_nome}", width=Inches(4.0))  # Ajusta a imagem no documento
+                    doc.add_picture(imagem_path, width=Inches(4.0))  # Ajusta a imagem no documento
                 except Exception as e:
                     st.error(f"Erro ao adicionar a imagem: {e}")
 
@@ -125,3 +130,5 @@ if st.button("📥 Gerar prova em Word"):
                 file_name=doc_path,
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
+
+
