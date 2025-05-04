@@ -38,6 +38,12 @@ with st.form("dados_prova"):
     data_prova = st.date_input("Data da Prova", value=date.today())
     st.form_submit_button("Salvar Configurações")
 
+# --- Formulário de dados finais (Nome do aluno e nota) ---
+with st.form("dados_finais"):
+    nome_aluno = st.text_input("Nome do Aluno")
+    nota = st.text_input("Nota (opcional)")
+    st.form_submit_button("Salvar Dados Finais")
+
 # --- Formulário de questões ---
 modo = "✏️ Editar Questão" if st.session_state.editando_index is not None else "➕ Adicionar Questão"
 st.subheader(modo)
@@ -130,7 +136,7 @@ for i, q in enumerate(st.session_state.questoes):
         st.session_state.questoes.pop(i)
         st.experimental_rerun()
 
-# --- Exportação da Prova ---
+# --- Exportação da Prova --- 
 st.subheader("📤 Exportar Prova")
 if st.button("💾 Gerar Documento Word"):
     if not st.session_state.questoes:
@@ -156,6 +162,11 @@ if st.button("💾 Gerar Documento Word"):
             doc.add_paragraph(f"Data: {data_prova.strftime('%d/%m/%Y')}")
             doc.add_paragraph("\n")
 
+            # Adicionar o nome do aluno e a nota
+            doc.add_paragraph(f"Nome do Aluno: {nome_aluno if nome_aluno else '[Nome do Aluno]'}")
+            doc.add_paragraph(f"Nota: {nota if nota else '[Nota]'}\n")
+
+            # Adicionando as questões
             for i, q in enumerate(st.session_state.questoes, 1):
                 doc.add_paragraph(f"{i}. {q['texto']}")
 
@@ -164,7 +175,7 @@ if st.button("💾 Gerar Documento Word"):
                         doc.add_picture(BytesIO(q["imagem"]), width=Inches(4.5))
                         doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
                     except:
-                        doc.add_paragraph("[Erro ao carregar imagem]")
+                        doc.add_parágrafo("[Erro ao carregar imagem]")
 
                 if q["tipo"] == "Múltipla Escolha":
                     doc.add_paragraph(f"A) {q['opcoes']['A']}")
