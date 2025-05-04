@@ -137,10 +137,83 @@ else:
                 st.success("Questão removida!")
                 st.rerun()
 
+# ... (código anterior permanece igual até a seção de exportação)
+
 # --- Exportação ---
 st.subheader("📤 Exportar Prova")
 if st.button("💾 Gerar Documento Word", use_container_width=True):
     if not st.session_state.questoes:
         st.error("Adicione pelo menos uma questão antes de exportar!")
+    elif not all([nome_professor, disciplina, serie, bimestre]):
+        st.error("Preencha todos os campos obrigatórios nos dados da prova!")
     else:
-        # ... (código de exportação mantido)
+        try:
+            doc = Document()
+            
+            # Configuração do estilo
+            style = doc.styles['Normal']
+            style.font.name = 'Arial'
+            style.font.size = Pt(12)
+            
+            # Cabeçalho com logo
+            if logo_escola:
+                logo_escola.seek(0)
+                doc.add_picture(logo_escola, width=Inches(1.5))
+                last_paragraph = doc.paragraphs[-1] 
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            
+            # Informações da prova
+            if nome_escola:
+                escola_para = doc.add_paragraph(nome_escola)
+                escola_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                escola_para.runs[0].bold = True
+            
+            titulo = doc.add_paragraph(f"PROVA DE {disciplina.upper()} - {bimestre.upper()}")
+            titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            titulo.runs[0].bold = True
+            
+            doc.add_paragraph(f"Professor: {nome_professor}")
+            doc.add_paragraph(f"Turma: {serie}")
+            doc.add_paragraph(f"Data: {data_prova.strftime('%d/%m/%Y')}")
+            doc.add_paragraph("\n")
+            
+            # Adicionar questões
+            for idx, questao in enumerate(st.session_state.questoes, 1):
+                # Enunciado
+                para = doc.add_paragraph()
+                para.add_run(f"{idx}. ").bold = True
+                para.add_run(questao["texto"])
+                
+                # Imagem (se houver)
+                if questao["imagem"]:
+                    try:
+                        doc.add_picture(BytesIO(questao["imagem"]), width=Inches(4.5))
+                        doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    except:
+                        doc.add_paragraph("[Erro ao carregar imagem]")
+                
+                # Opções (se for múltipla escolha)
+                if questao["tipo"] == "Múltipla Escolha":
+                    for letra, texto in questao["opcoes"].items():
+                        doc.add_paragraph(f"{letra}) {texto}")
+                else:
+                    for _ in range(3):  # Linhas para resposta
+                        doc.add_paragraph("_" * 60)
+                
+                doc.add_paragraph()  # Espaço entre questões
+            
+            # Gerar arquivo
+            buffer = BytesIO()
+            doc.save(buffer)
+            buffer.seek(0)
+            
+            nome_arquivo = f"Prova_{disciplina}_{serie}_{bimestre}.docx".replace(" ", "_")
+            st.download_button(
+                "⬇️ Baixar Prova em Word",
+                data=buffer,
+                file_name=nome_arquivo,
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True
+            )
+        except Exception as e:
+            st.error(f"Erro ao gerar documento: {str(e)}")
