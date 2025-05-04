@@ -50,18 +50,12 @@ with st.form("dados_prova"):
     data_prova = st.date_input("Data da Prova", value=date.today())
     st.form_submit_button("Salvar Configurações")
 
-# --- Formulário de dados finais (Nome do aluno e nota) ---
-with st.form("dados_finais"):
-    nome_aluno = st.text_input("Nome do Aluno")
-    nota = st.text_input("Nota (opcional)")
-    st.form_submit_button("Salvar Dados Finais")
-
 # --- Formulário de questões ---
 modo = "✏️ Editar Questão" if st.session_state.editando_index is not None else "➕ Adicionar Questão"
 st.subheader(modo)
 
-# Limpar campos após clicar em "Adicionar Questão"
-if st.button("➕ Adicionar Questão", key="adicionar_questao"):
+# Limpar campos após clicar em "Apagar Textos"
+if st.button("Apagar Textos", key="apagar_textos"):
     st.session_state.texto_questao = ""
     st.session_state.imagem_questao = None
     st.session_state.opcao_a = ""
@@ -90,7 +84,7 @@ else:
     st.session_state.opcao_d = ""
 
 # Ao clicar no botão de adicionar/editar
-if st.button(modo, key="adicionar_editar_questao"):
+if st.button(modo):
     if texto_questao.strip():
         nova_questao = {
             "texto": texto_questao,
@@ -108,7 +102,7 @@ if st.button(modo, key="adicionar_editar_questao"):
             st.success("Questão editada com sucesso!")
         else:
             st.session_state.questoes.append(nova_questao)
-            # Limpar campos após adicionar uma nova questão
+            # Limpar os campos após adicionar a questão
             st.session_state.texto_questao = ""  # Limpar campo do texto da questão
             st.session_state.imagem_questao = None  # Limpar o campo da imagem
             st.session_state.opcao_a = ""  # Limpar a opção A
@@ -144,9 +138,9 @@ for i, q in enumerate(st.session_state.questoes):
         st.session_state.questoes.pop(i)
         st.experimental_rerun()
 
-# --- Exportação da Prova --- 
+# --- Exportação da Prova ---
 st.subheader("📤 Exportar Prova")
-if st.button("💾 Gerar Documento Word", key="gerar_doc"):
+if st.button("💾 Gerar Documento Word"):
     if not st.session_state.questoes:
         st.error("Adicione questões primeiro!")
     else:
@@ -184,7 +178,7 @@ if st.button("💾 Gerar Documento Word", key="gerar_doc"):
                     doc.add_paragraph(f"A) {q['opcoes']['A']}")
                     doc.add_paragraph(f"B) {q['opcoes']['B']}")
                     doc.add_paragraph(f"C) {q['opcoes']['C']}")
-                    doc.add_paragraph(f"D) {q['opcoes']['D']}")
+                    doc.add_parágrafo(f"D) {q['opcoes']['D']}")
                 else:
                     for _ in range(5):
                         doc.add_paragraph("_" * 80)
